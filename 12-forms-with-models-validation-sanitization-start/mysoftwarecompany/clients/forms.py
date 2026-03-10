@@ -1,5 +1,6 @@
 from django import forms
 from .models import Company
+<<<<<<< HEAD
 
 from .models import Company, Employee
 
@@ -52,6 +53,8 @@ class CompanyForm(forms.ModelForm):
                 raise forms.ValidationError(f"The company contains a forbidden word: {word}")
 
         return cleaned_data
+=======
+>>>>>>> cfb8630c2034e3dd0bffcd76c27b4b0c6dc1aeeb
 
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=100, required=True)
