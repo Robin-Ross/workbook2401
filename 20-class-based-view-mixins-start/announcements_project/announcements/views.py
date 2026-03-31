@@ -1,8 +1,12 @@
+from django.urls import reverse_lazy
 from django.views import View
+from django.views.generic import ListView, FormView
 from django.utils.decorators import method_decorator
 from django.shortcuts import render, redirect
 # import login_required decorator
 from django.contrib.auth.decorators import login_required, user_passes_test, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from core.mixins import IsTeacherRoleMixin
 
 # Create your views here.
 from .models import Announcement
@@ -14,41 +18,27 @@ def is_teacher(user):
     return user.role == 'teacher'
 
 
-@method_decorator(login_required, name='dispatch')
-class AnnouncementListView(View):
+#@method_decorator(login_required, name='dispatch')
+class AnnouncementListView(LoginRequiredMixin, ListView):
     template_name = 'announcements/announcement_list.html'
+    model = Announcement
+    context_object_name = 'announcements'
+    ordering = ['-created_at']
 
-    def get(self, request):
-        announcements = Announcement.objects.all().order_by('-created_at')
-        return render(
-            request,
-            self.template_name,
-            {'announcements': announcements}
-        )
+    # Can override to filter
+    def get_queryset(self):
+        return Announcement.objects.filter(
+            created_by=self.request.user
+        ).order_by('-created_at')
 
-
-
-# this will restrict access to only users that pass the is_teacher test
-# it will redirect to the login page if the user does not have permission.
-from django.views import View
-from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required, user_passes_test
-
-@method_decorator(login_required, name='dispatch')
-@method_decorator(user_passes_test(is_teacher, login_url='login'), name='dispatch')
-class CreateAnnouncementView(View):
+class CreateAnnouncementView(LoginRequiredMixin, IsTeacherRoleMixin, FormView):
     template_name = 'announcements/create_announcement.html'
     form_class = AnnouncementForm
+    success_url = reverse_lazy('announcement_list')
 
-    def get(self, request, *args, **kwargs):
-        form = self.form_class()
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        if form.is_valid():
+    def form_valid(self, form):
             announcement = form.save(commit=False)
-            announcement.created_by = request.user
+            announcement.created_by = self.request.user
             announcement.save()
-            return redirect('announcement_list')
-        return render(request, self.template_name, {'form': form})
+            return super().form_valid(form)
+    

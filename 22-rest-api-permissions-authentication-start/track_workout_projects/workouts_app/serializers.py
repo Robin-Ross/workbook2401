@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Exercise
+from .models import Exercise, Workout
 
 
 class ExerciseSerializer(serializers.Serializer):
@@ -22,5 +22,12 @@ class ExerciseSerializer(serializers.Serializer):
         instance.exercise_type = validated_data.get('exercise_type', instance.exercise_type)
         instance.save()
         return instance
+
+class WorkoutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Workout
+        fields = '__all__'
+        # __all__ just takes in all fields, but we could specify the fields
+        # like fields = ['id', 'title', 'date']
 
 
