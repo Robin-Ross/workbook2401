@@ -1,4 +1,4 @@
-from .views import ExerciseAPIView, WorkoutViewSet, WorkoutLogAPIView
+from .views import ExerciseAPIView, WorkoutViewSet, WorkoutLogAPIView, ExerciseSearchViewSet
 
 from rest_framework.routers import DefaultRouter
 
@@ -6,6 +6,7 @@ from django.urls import path
 
 router = DefaultRouter()
 router.register(r'workouts', WorkoutViewSet, basename='workout')
+router.register('exercises/results', ExerciseSearchViewSet, basename='exercise-search')
 
 urlpatterns = [
     path('workout-logs/', WorkoutLogAPIView.as_view(), name='workout-log-api'),

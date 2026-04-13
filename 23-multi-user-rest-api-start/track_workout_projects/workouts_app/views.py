@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from .permissions import IsOwnerOfResourceOrReadOnly
 
 
-from .serializers import ExerciseSerializer, WorkoutSerializer
-from .models import Exercise, Workout
+from .serializers import ExerciseSerializer, WorkoutLogCreateUpdateSerializer, WorkoutLogReadOnlySerializer, WorkoutSerializer
+from .models import Exercise, Workout, WorkoutLog
 
 class WorkoutViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -53,3 +54,42 @@ class ExerciseAPIView(APIView):
         exercise = get_object_or_404(Exercise, id=id)
         exercise.delete()
         return Response(status=204)
+    
+class WorkoutLogAPIView(APIView):
+    permission_classes = [IsAuthenticated | IsOwnerOfResourceOrReadOnly]
+    def get_serializer_class(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH']:
+            return WorkoutLogCreateUpdateSerializer
+        return WorkoutLogReadOnlySerializer
+    
+    def get(self, request, id=None):
+        #detail view
+        if id:
+            workout_log = get_object_or_404(WorkoutLog, id=id)
+            serializer = self.get_serializer_class()(workout_log)
+            return Response(serializer.data)
+        #list view
+        worklog_logs = WorkoutLog.objects.all()
+        serializer = self.get_serializer_class()(worklog_logs, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid():
+            workout_log = serializer.save()
+            return Response(WorkoutLogReadOnlySerializer(workout_log).data, status=201)
+        return Response(serializer.errors, status=400)
+    
+    def update(self, request, id, partial=False):
+        workout_log = get_object_or_404(WorkoutLog, id=id)
+        serializer = self.get_serializer_class()(workout_log, data=request.data, partial=partial)
+        if serializer.is_valid():
+            workout_log = serializer.save()
+            return Response(WorkoutLogReadOnlySerializer(workout_log).data)
+        return Response(serializer.errors, status=400)
+    
+    def put(self, request, id):
+        return self.update(request, id, partial=False)
+    
+    def patch(self, request, id):
+        return self.update(request, id, partial=True)

@@ -17,6 +17,11 @@ class Exercise(models.Model):
         return F"{self.name} ({self.exercise_type})"
 
 class Workout(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True)
     title = models.CharField(max_length=100)
     date = models.DateTimeField(auto_now_add=True)
     # Linking many exercises to many workouts

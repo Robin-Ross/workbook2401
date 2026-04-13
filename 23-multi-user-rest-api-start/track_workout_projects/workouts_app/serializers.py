@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 
-from .models import Exercise, Workout
+
+from .models import Exercise, Workout, WorkoutLog
 
 
 class WorkoutSerializer(serializers.ModelSerializer):
@@ -27,5 +29,46 @@ class ExerciseSerializer(serializers.Serializer):
         instance.exercise_type = validated_data.get('exercise_type', instance.exercise_type)
         instance.save()
         return instance
+
+class UserReadOnlySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username']
+
+class WorkoutLogReadOnlySerializer(serializers.ModelSerializer):
+    # include the workout info in the response
+    workout = WorkoutSerializer(read_only=True)
+    # include the Exercise info in the response
+    exercise = ExerciseSerializer(read_only=True)
+    # include the user info in the response
+    user = UserReadOnlySerializer(read_only=True)
+
+    class Meta:
+        model = WorkoutLog
+        fields = [
+            'id',
+            'sets',
+            'reps',
+            'weight_kg',
+            'time',
+            #override the default fields
+            'workout',
+            'exercise',
+            'user'
+        ]
+
+class WorkoutLogCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutLog
+        fields = [
+            'sets',
+            'reps',
+            'weight_kg',
+            'time',
+            # foreign key fields
+            'workout',
+            'exercise',
+            'user'
+        ]
 
 

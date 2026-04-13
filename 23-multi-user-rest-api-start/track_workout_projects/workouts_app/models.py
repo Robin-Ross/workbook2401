@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 # Create your models here.
 class Exercise(models.Model):
@@ -32,6 +33,13 @@ class WorkoutLog(models.Model):
     reps = models.IntegerField(blank=True, null=True)
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     time = models.DurationField(blank=True, null=True)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
         return f"{self.workout.title} - {self.exercise.name}"

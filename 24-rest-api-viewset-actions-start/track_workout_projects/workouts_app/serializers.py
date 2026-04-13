@@ -9,6 +9,20 @@ class WorkoutSerializer(serializers.ModelSerializer):
         model = Workout
         fields = ['id', 'title', 'date']
 
+class WorkoutLogSimpleDetailReadOnlySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutLog
+        fields = ['id', 'sets', 'reps', 'weight_kg', 'exercise', 'time']
+        depth = 1 #expand out exercise to show its fields and not just the ID
+
+class WorkoutDetailReadOnlySerializer(serializers.ModelSerializer):
+    logs = WorkoutLogSimpleDetailReadOnlySerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Workout
+        fields = ['id', 'title', 'date', 'logs']
+        # depth = 2
+
 class ExerciseSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=100)

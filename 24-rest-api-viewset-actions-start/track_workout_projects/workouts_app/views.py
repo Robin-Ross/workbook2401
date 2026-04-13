@@ -1,12 +1,14 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 
 from .permissions import IsOwnerOfResourceOrReadOnly
 from .serializers import( ExerciseSerializer, WorkoutSerializer
-                         , WorkoutLogReadOnlySerializer, WorkoutLogCreateUpdateSerializer)
+                         , WorkoutLogReadOnlySerializer, WorkoutLogCreateUpdateSerializer,
+                         WorkoutDetailReadOnlySerializer)
 from .models import Exercise, Workout, WorkoutLog
 
 
@@ -14,6 +16,18 @@ class WorkoutViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Workout.objects.all()
     serializer_class = WorkoutSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
+    # /workouts/{id}/detail/ <- detail=True adds the {id} and the url_path is appended
+    @action(detail=True, methods=['get'], url_path='detail')
+    def worklog_log(self, request, pk=None):
+        # self.get_object() is built into ModelViewSet (Only available on ModelViewSets)
+        # It handles the 404 errors for us and runs all permissions sets for us
+        workout = self.get_object()
+        serializer = WorkoutDetailReadOnlySerializer(workout)
+        return Response(serializer.data)
 
 
 class ExerciseAPIView(APIView):
@@ -57,6 +71,14 @@ class ExerciseAPIView(APIView):
         exercise.delete()
         return Response(status=204)
 
+class ExerciseSearchViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Exercise.objects.all()
+    serializer_class = ExerciseSerializer
+    filter_backends = [filters.SearchFilter]
+    # can use '^name' for starts with or '=name' for an exact math
+    # just 'name' filters by contains
+    search_fields = ['name']
 
 class WorkoutLogAPIView(APIView):
     permission_classes = [IsOwnerOfResourceOrReadOnly]
